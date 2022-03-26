@@ -26,31 +26,7 @@ struct PlayerController: RouteCollection {
     func create(req: Request) throws -> EventLoopFuture<HTTPStatus> {
 
         let player = try req.content.decode(Player.self)
-        
-        let saved = player.save(on: req.db)
-        let statusPromise = req.eventLoop.makePromise(of: HTTPStatus.self)
-
-        saved.whenComplete { someResult in
-                    switch someResult {
-                    case .success:
-                        let imageName = player.id?.uuidString ?? "unknown image"
-                        do {
-                            try self.saveFile(name: imageName, data: player.image)
-                            let str = String(decoding: player.image, as: UTF8.self)
-                        } catch {
-                            self.logger.critical("failed to save file for image \(imageName)")
-                            statusPromise.succeed(.internalServerError)
-                        }
-                        statusPromise.succeed(.ok)
-                    case .failure(let error):
-                        self.logger.critical("failed to save file \(error.localizedDescription)")
-                        statusPromise.succeed(.internalServerError)
-                    }
-                    statusPromise.succeed(.ok)
-                }
-                return statusPromise.futureResult
-                
-                 
+        return player.save(on: req.db).transform(to: .ok)
     }
     
     
