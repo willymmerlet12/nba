@@ -15,6 +15,7 @@ struct PlayerController: RouteCollection {
         let players = routes.grouped("players")
         players.get(use: index)
         players.post(use: create)
+        players.delete("players", ":id", use: delete)
         
     }
     
@@ -29,27 +30,16 @@ struct PlayerController: RouteCollection {
         return player.save(on: req.db).transform(to: .ok)
     }
     
+    func delete(req: Request) throws -> EventLoopFuture<HTTPStatus> {
+            guard let id = req.parameters.get("id", as: UUID.self) else {
+                throw Abort(.badRequest)
+            }
+            return Player.find(id, on: req.db)
+                .unwrap(or: Abort(.notFound))
+                .flatMap { $0.delete(on: req.db) }
+                .map { .ok }
+        }
     
-    
-//    func createe(req: Request) throws -> EventLoopFuture<Player.Output> {
-//            struct Entity: Content {
-//                var images: [File]
-//            }
-//            let uploadPath = req.application.directory.publicDirectory + "uploads/"
-//            let player = try req.content.decode(Player.self)
-//            let input = try req.content.decode(Entity.self)
-//
-//            return input.images.map { file -> EventLoopFuture<String> in
-//                let filename = "\(Date().timeIntervalSince1970)_" + file.filename.replacingOccurrences(of: " ", with: "")
-//                return req.fileio.writeFile(file.data, at: uploadPath + filename ).map { filename }
-//            }.flatten(on: req.eventLoop).map { filenames in
-//                player.image = filenames
-//            }.flatMap { _ in
-//                return player.save(on: req.db).map {
-//                    return player.responseFrom(baseUrl: req.baseUrl)
-//                }
-//            }
-//        }
     }
    
     
