@@ -15,7 +15,7 @@ struct PlayerController: RouteCollection {
         let players = routes.grouped("players")
         players.get(use: index)
         players.post(use: create)
-        players.delete("players", ":id", use: delete)
+        players.delete(":id", use: delete)
         
     }
     
@@ -31,9 +31,10 @@ struct PlayerController: RouteCollection {
     }
     
     func delete(req: Request) throws -> EventLoopFuture<HTTPStatus> {
-            guard let id = req.parameters.get("id", as: UUID.self) else {
+            guard let id = req.parameters.get("id", as: UUID.self)  else {
                 throw Abort(.badRequest)
             }
+        print("we did it")
             return Player.find(id, on: req.db)
                 .unwrap(or: Abort(.notFound))
                 .flatMap { $0.delete(on: req.db) }
